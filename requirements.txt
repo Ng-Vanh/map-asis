@@ -1,0 +1,31 @@
+# Web Framework
+flask==3.0.0
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# AI/ML
+openai==1.12.0
+torch==2.2.0
+transformers==4.37.2
+
+# Vector Database
+qdrant-client==1.7.3
+
+# Graph Database
+neo4j==5.16.0
+
+# Data Processing
+pandas==2.2.0
+numpy==1.26.3
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.31.0
+tqdm==4.66.1
+wikipedia==1.4.0
+
+# Development (optional)
+pytest==8.0.0
+black==24.1.1
+flake8==7.0.0
