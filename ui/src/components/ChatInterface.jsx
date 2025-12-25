@@ -1,0 +1,169 @@
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import Message from './Message';
+import MessageInput from './MessageInput';
+
+// Helper functions to format different types of responses
+const formatPlacesList = (places, intent) => {
+  if (!places || places.length === 0) {
+    return 'Không tìm thấy địa điểm nào phù hợp.';
+  }
+  
+  let result = `### Tìm thấy ${places.length} địa điểm:\n\n`;
+  places.forEach((place, index) => {
+    result += `**${index + 1}. ${place.name}**\n`;
+    if (place.address) result += `📍 ${place.address}\n`;
+    if (place.categories) result += `🏷️ ${place.categories.join(', ')}\n`;
+    if (place.distance_meters) result += `📏 ${place.distance_meters}m\n`;
+    result += '\n';
+  });
+  
+  return result;
+};
+
+const formatRecommendations = (recommendations) => {
+  if (!recommendations || recommendations.length === 0) {
+    return 'Không có gợi ý nào phù hợp.';
+  }
+  
+  let result = '### 🎯 Gợi ý địa điểm cho bạn:\n\n';
+  recommendations.forEach((place, index) => {
+    result += `**${index + 1}. ${place.name}**\n`;
+    if (place.address) result += `📍 ${place.address}\n`;
+    if (place.match_reason) result += `💡 ${place.match_reason}\n`;
+    if (place.score !== undefined) result += `⭐ Score: ${place.score.toFixed(2)}\n`;
+    result += '\n';
+  });
+  
+  return result;
+};
+
+const ChatInterface = () => {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: 'assistant',
+      content: 'Xin chào! Tôi là trợ lý du lịch AI của bạn. Tôi có thể giúp bạn:\n\n- 🔍 Tìm kiếm địa điểm\n- 📍 Tìm các địa điểm gần đây\n- 🎯 Gợi ý địa điểm phù hợp\n- 📊 So sánh các địa điểm\n- 🗺️ Lên kế hoạch lịch trình\n- 💡 Tìm kiếm theo ngữ nghĩa\n\nBạn muốn khám phá điều gì ở Hà Nội?',
+      timestamp: new Date()
+    }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const sendMessage = async (userMessage) => {
+    // Add user message
+    const newUserMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, newUserMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post('http://localhost:8864/api/v1/chat', {
+        message: userMessage
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Format response content based on API structure
+      let content = '';
+      const data = response.data;
+      
+      if (data.success && data.result) {
+        // Handle different intent types
+        if (data.result.itinerary) {
+          // Plan itinerary intent
+          content = data.result.itinerary;
+        } else if (data.result.response) {
+          // General response
+          content = data.result.response;
+        } else if (data.result.comparison) {
+          // Compare places intent
+          content = data.result.comparison;
+        } else if (data.result.places) {
+          // Search/nearby/semantic places
+          content = formatPlacesList(data.result.places, data.intent);
+        } else if (data.result.recommendations) {
+          // Recommend places
+          content = formatRecommendations(data.result.recommendations);
+        } else {
+          // Fallback - try to display result as JSON
+          content = JSON.stringify(data.result, null, 2);
+        }
+      } else if (data.response) {
+        // Direct response field
+        content = data.response;
+      } else {
+        content = 'Xin lỗi, tôi không thể xử lý yêu cầu này.';
+      }
+
+      const assistantMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: content,
+        intent: data.intent,
+        confidence: data.confidence,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      const errorMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: `❌ Lỗi kết nối: ${error.message}\n\nVui lòng kiểm tra:\n- Server đang chạy ở http://localhost:8864\n- Các service (Neo4j, Qdrant, Embedding) đang hoạt động`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '70vh' }}>
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {messages.map(message => (
+          <Message key={message.id} message={message} />
+        ))}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-2xl px-6 py-4">
+              <div className="flex space-x-2">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <MessageInput onSend={sendMessage} isLoading={isLoading} />
+    </div>
+  );
+};
+
+export default ChatInterface;

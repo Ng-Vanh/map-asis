@@ -3,7 +3,7 @@ Test script cho các services mới của Map Assistant
 Chạy file này để test các API endpoints
 """
 
-import requests
+import requests # type: ignore
 import json
 
 BASE_URL = "http://localhost:8864/api/v1"

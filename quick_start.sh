@@ -4,7 +4,7 @@
 # Hướng dẫn nhanh để chạy và test hệ thống
 
 echo "=================================="
-echo "🗺️  MAP ASSISTANT - QUICK START"
+echo "MAP ASSISTANT - QUICK START"
 echo "=================================="
 echo ""
 
