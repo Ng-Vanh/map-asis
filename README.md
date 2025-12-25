@@ -292,14 +292,5 @@ Contributions are welcome! Các tính năng có thể phát triển thêm:
    - Promotion & deals
    - Restaurant reservation
 
-## 📝 License
-
-MIT License
-
-## 👥 Team
-
-Phát triển bởi Map Assistant Team
-
----
 
 **⭐ Nếu project hữu ích, đừng quên star repo!**
