@@ -3,6 +3,7 @@ from neo4j import GraphDatabase
 from app.database.neo4j import Neo4jSpatialQuery
 from app.database.qdrant import QdrantPlaceSearch
 from app.models.model import AIService
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 import os
 
@@ -61,6 +62,14 @@ def search_places(lat, lon, categories, radius_meters=2000, limit=20):
         limit=limit
     )
     
+    # Enrich places with images from Qdrant
+    # NOTE: Only works for places that have Wikipedia pages
+    # Many small cafes/restaurants may not have images
+    for place in places:
+        place['images'] = []  # Default empty
+        # Images enrichment disabled for performance
+        # Only semantic_search returns images (from Qdrant directly)
+    
     # Enrich với thông tin từ AI nếu cần
     if places:
         places_summary = f"Tìm thấy {len(places)} địa điểm:\n"
@@ -101,6 +110,11 @@ def nearby_landmark(landmark_name, categories, radius_meters=1000, limit=20):
     if result.get('landmark') and result.get('nearby_places'):
         landmark_info = result['landmark']
         places = result['nearby_places']
+        
+        # Enrich places with images from Qdrant  
+        # NOTE: Only works for places with Wikipedia pages
+        for place in places:
+            place['images'] = []  # Default empty - images enrichment disabled
         
         summary = f"Xung quanh {landmark_info['name']} ({landmark_info['address']}), có {len(places)} địa điểm:\n"
         for place in places[:5]:
@@ -148,12 +162,16 @@ def semantic_search(query, lat=None, lon=None, radius_meters=5000, top_k=10):
     results = []
     for item in vector_results[:top_k]:
         payload = item.get('payload', {})
+        # Use 'title' from Wikipedia data, fallback to 'name'
+        place_name = payload.get('title', payload.get('name', 'N/A'))
         results.append({
             'place_id': item['place_id'],
-            'name': payload.get('name', 'N/A'),
+            'name': place_name,
             'score': item['score'],
             'summary': payload.get('summary', ''),
-            'text': payload.get('text', '')
+            'text': payload.get('text', ''),
+            'images': payload.get('images', []),
+            'url': payload.get('url', '')
         })
     
     # Generate AI response

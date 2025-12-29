@@ -4,18 +4,43 @@ import Message from './Message';
 import MessageInput from './MessageInput';
 
 // Helper functions to format different types of responses
-const formatPlacesList = (places, intent) => {
+const formatPlacesList = (places, intent, summary = '') => {
   if (!places || places.length === 0) {
     return 'Không tìm thấy địa điểm nào phù hợp.';
   }
   
-  let result = `### Tìm thấy ${places.length} địa điểm:\n\n`;
+  let result = '';
+  
+  // Display summary first if available
+  if (summary) {
+    result += `${summary}\n\n---\n\n`;
+  }
+  
+  result += `### Tìm thấy ${places.length} địa điểm:\n\n`;
+  
   places.forEach((place, index) => {
-    result += `**${index + 1}. ${place.name}**\n`;
-    if (place.address) result += `📍 ${place.address}\n`;
-    if (place.categories) result += `🏷️ ${place.categories.join(', ')}\n`;
-    if (place.distance_meters) result += `📏 ${place.distance_meters}m\n`;
-    result += '\n';
+    result += `**${index + 1}. ${place.name}**\n\n`;
+    
+    // Display images first (max 2)
+    if (place.images && place.images.length > 0) {
+      const imagesToShow = place.images.slice(0, 2);
+      imagesToShow.forEach(imgUrl => {
+        result += `![${place.name}](${imgUrl})\n\n`;
+      });
+    }
+    
+    if (place.address) result += `📍 **Địa chỉ:** ${place.address}\n\n`;
+    if (place.categories && place.categories.length > 0) {
+      result += `🏷️ **Loại:** ${place.categories.join(', ')}\n\n`;
+    }
+    if (place.distance_meters !== undefined) {
+      result += `📏 **Khoảng cách:** ${place.distance_meters}m\n\n`;
+    }
+    if (place.summary) {
+      result += `💡 ${place.summary}\n\n`;
+    }
+    
+    result += '---\n\n';
   });
   
   return result;
@@ -94,9 +119,20 @@ const ChatInterface = () => {
         } else if (data.result.comparison) {
           // Compare places intent
           content = data.result.comparison;
+        } else if (data.result.nearby_places) {
+          // Nearby landmark - has summary and nearby_places
+          content = formatPlacesList(
+            data.result.nearby_places, 
+            data.intent, 
+            data.result.summary
+          );
         } else if (data.result.places) {
-          // Search/nearby/semantic places
-          content = formatPlacesList(data.result.places, data.intent);
+          // Search/semantic places
+          content = formatPlacesList(
+            data.result.places, 
+            data.intent,
+            data.result.recommendation || data.result.summary
+          );
         } else if (data.result.recommendations) {
           // Recommend places
           content = formatRecommendations(data.result.recommendations);

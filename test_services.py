@@ -31,11 +31,7 @@ def test_health():
 def test_agent_chat():
     """Test Agent Chat - Natural Language"""
     test_messages = [
-        "Tìm quán cafe gần Hồ Gươm",
-        "So sánh Hồ Gươm và Hồ Tây",
-        "Lập lịch trình 8 giờ Old Quarter cho gia đình",
-        "Gợi ý địa điểm lãng mạn cho hẹn hò",
-        "Cho tôi biết về Lăng Bác",
+        "Lên kế hoạch tham quan ở Cầu Giấy ?"
     ]
     
     for i, message in enumerate(test_messages, 1):
@@ -177,11 +173,11 @@ def run_all_tests():
 
 if __name__ == "__main__":
     # Chạy tất cả tests
-    run_all_tests()
+    # run_all_tests()
     
     # Hoặc chạy từng test riêng lẻ:
     # test_health()
-    # test_agent_chat()  # NEW: Test Agent Chat
+    test_agent_chat()  # NEW: Test Agent Chat
     # test_place_info()
     # test_search_places()
     # test_nearby_landmark()
