@@ -19,7 +19,12 @@ const formatPlacesList = (places, intent, summary = '') => {
   result += `### Tìm thấy ${places.length} địa điểm:\n\n`;
   
   places.forEach((place, index) => {
-    result += `**${index + 1}. ${place.name}**\n\n`;
+    // Display name (with English translation if available)
+    if (place.name_en && place.name_en !== place.name) {
+      result += `**${index + 1}. ${place.name}** (${place.name_en})\n\n`;
+    } else {
+      result += `**${index + 1}. ${place.name}**\n\n`;
+    }
     
     // Display images first (max 2)
     if (place.images && place.images.length > 0) {
@@ -29,6 +34,7 @@ const formatPlacesList = (places, intent, summary = '') => {
       });
     }
     
+    // Basic info
     if (place.address) result += `📍 **Địa chỉ:** ${place.address}\n\n`;
     if (place.categories && place.categories.length > 0) {
       result += `🏷️ **Loại:** ${place.categories.join(', ')}\n\n`;
@@ -36,6 +42,61 @@ const formatPlacesList = (places, intent, summary = '') => {
     if (place.distance_meters !== undefined) {
       result += `📏 **Khoảng cách:** ${place.distance_meters}m\n\n`;
     }
+    
+    // Phase 1: Opening hours
+    if (place.is_open_now !== undefined) {
+      const status = place.is_open_now ? '🟢 Đang mở cửa' : '🔴 Đã đóng cửa';
+      result += `⏰ **Trạng thái:** ${status}\n\n`;
+    }
+    
+    // Phase 1: Price info
+    if (place.estimated_cost || place.price_info) {
+      const priceInfo = place.estimated_cost || place.price_info;
+      if (priceInfo.price_range) {
+        result += `💰 **Giá:** ${priceInfo.price_range} `;
+      }
+      if (priceInfo.per_person || priceInfo.min_price) {
+        const min = priceInfo.per_person?.min || priceInfo.min_price;
+        const max = priceInfo.per_person?.max || priceInfo.max_price;
+        result += `(${min?.toLocaleString()} - ${max?.toLocaleString()} VND)\n\n`;
+      } else {
+        result += '\n\n';
+      }
+    }
+    
+    // Phase 1: Contact info
+    if (place.contact_info) {
+      if (place.contact_info.phone) {
+        result += `📞 **Phone:** ${place.contact_info.phone}\n\n`;
+      }
+      if (place.contact_info.website) {
+        result += `🌐 **Website:** [${place.contact_info.website}](${place.contact_info.website})\n\n`;
+      }
+    }
+    
+    // Phase 1: Google Maps link
+    if (place.google_maps_url) {
+      result += `🗺️ **[Xem trên Google Maps](${place.google_maps_url})**\n\n`;
+    }
+    
+    // Phase 1: Directions
+    if (place.directions) {
+      result += `🚶 **Chỉ đường:** ${place.directions.distance?.meters}m (~${place.directions.estimated_time?.minutes} phút)\n\n`;
+      if (place.suggested_transport) {
+        const transportIcons = {
+          walking: '🚶',
+          bicycling: '🚴',
+          driving: '🚗',
+          transit: '🚌'
+        };
+        result += `${transportIcons[place.suggested_transport] || '🚗'} **Đề xuất:** ${place.suggested_transport}\n\n`;
+      }
+      if (place.directions.directions_url) {
+        result += `📍 **[Chỉ đường chi tiết](${place.directions.directions_url})**\n\n`;
+      }
+    }
+    
+    // Summary
     if (place.summary) {
       result += `💡 ${place.summary}\n\n`;
     }
@@ -68,7 +129,7 @@ const ChatInterface = () => {
     {
       id: 1,
       role: 'assistant',
-      content: 'Xin chào! Tôi là trợ lý du lịch AI của bạn. Tôi có thể giúp bạn:\n\n- 🔍 Tìm kiếm địa điểm\n- 📍 Tìm các địa điểm gần đây\n- 🎯 Gợi ý địa điểm phù hợp\n- 📊 So sánh các địa điểm\n- 🗺️ Lên kế hoạch lịch trình\n- 💡 Tìm kiếm theo ngữ nghĩa\n\nBạn muốn khám phá điều gì ở Hà Nội?',
+      content: 'Xin chào! Tôi là trợ lý du lịch AI của bạn. 🌟\n\n**✨ Phase 1 Features:**\n- 🌐 **Đa ngôn ngữ** - Hỗ trợ Tiếng Việt & English\n- 🗺️ **Maps & Chỉ đường** - Google Maps tích hợp\n- ⏰ **Giờ mở cửa** - Kiểm tra trạng thái real-time\n- 💰 **Ước tính chi phí** - Lọc theo ngân sách\n\n**Tôi có thể giúp bạn:**\n- 🔍 Tìm kiếm địa điểm (với giá, giờ mở cửa)\n- 📍 Tìm địa điểm gần đây (có chỉ đường)\n- 🎯 Gợi ý địa điểm (theo ngân sách)\n- 📊 So sánh địa điểm (so sánh giá)\n- 🗺️ Lên lịch trình (với tổng chi phí)\n- 💡 Chat tự nhiên bằng Tiếng Việt hoặc English\n\n**Ví dụ:**\n- "Tìm quán cafe gần Hồ Gươm"\n- "Find restaurants near Hoan Kiem Lake" (English)\n- "Lập lịch trình 1 ngày Old Quarter với ngân sách 500k"\n- "So sánh giá giữa các nhà hàng"\n\nBạn muốn khám phá điều gì ở Hà Nội? 🏮',
       timestamp: new Date()
     }
   ]);

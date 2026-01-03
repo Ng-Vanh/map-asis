@@ -1,12 +1,14 @@
 """
-Agent Service - Intent Classification & Routing
+Agent Service - Intent Classification & Routing (Enhanced with Phase 1)
 Xử lý message tự nhiên từ user và route đến service phù hợp
+Supports multilingual (Vietnamese & English)
 """
 
 from flask import jsonify
 from app.models.model import AIService
 from app.database.neo4j.main import Neo4jSpatialQuery
 from app.database.qdrant.main import QdrantPlaceSearch
+from app.services.translation_service import get_translation_service
 import json
 import re
 import os
@@ -27,6 +29,7 @@ qdrant_search = QdrantPlaceSearch(
     collection_name="map_assistant_v2"
 )
 ai_service = AIService()
+translation_service = get_translation_service()
 
 
 class AgentRouter:
@@ -301,24 +304,41 @@ Chỉ điền các entities có trong message. Entities không có thì bỏ qua
 agent_router = AgentRouter()
 
 
-def chat_handler(message: str, context: dict = None) -> dict:
+def chat_handler(message: str, context: dict = None, language: str = None) -> dict:
     """
-    Main chat handler - Xử lý message tự nhiên từ user
+    Main chat handler - Xử lý message tự nhiên từ user (Enhanced with Phase 1)
     
     Args:
         message: Message từ user
         context: Context của conversation (optional)
+        language: Preferred language ('vi' or 'en', auto-detect if None)
     
     Returns:
         Response với kết quả và metadata
     """
     if not message or not message.strip():
+        error_msg = "Xin lỗi, tôi không nhận được câu hỏi của bạn."
+        if language == 'en':
+            error_msg = "Sorry, I didn't receive your question."
+        
         return jsonify({
             "success": False,
-            "message": "Xin lỗi, tôi không nhận được câu hỏi của bạn."
+            "message": error_msg
         })
     
+    # Auto-detect language if not specified
+    if language is None:
+        language = translation_service.detect_language(message)
+    
     try:
+        # Store original message and language
+        original_message = message
+        original_language = language
+        
+        # Translate to Vietnamese if English (for intent classification)
+        if language == 'en':
+            message = translation_service.translate(message, 'vi')
+        
         # Step 1: Classify intent
         intent_result = agent_router.classify_intent(message)
         
@@ -328,7 +348,8 @@ def chat_handler(message: str, context: dict = None) -> dict:
         # Step 3: Combine với metadata
         response = {
             "success": True,
-            "message": message,
+            "message": original_message,
+            "detected_language": original_language,
             "intent": intent_result.get("intent"),
             "confidence": intent_result.get("confidence"),
             "result": service_result.json if hasattr(service_result, 'json') else service_result
@@ -337,10 +358,14 @@ def chat_handler(message: str, context: dict = None) -> dict:
         return jsonify(response)
         
     except Exception as e:
+        error_msg = "Xin lỗi, tôi gặp lỗi khi xử lý yêu cầu của bạn. Bạn có thể diễn đạt lại được không?"
+        if language == 'en':
+            error_msg = "Sorry, I encountered an error. Could you rephrase your request?"
+        
         return jsonify({
             "success": False,
             "error": str(e),
-            "message": "Xin lỗi, tôi gặp lỗi khi xử lý yêu cầu của bạn. Bạn có thể diễn đạt lại được không?"
+            "message": error_msg
         })
 
 

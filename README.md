@@ -8,17 +8,27 @@ Map Assistant là hệ thống recommendation địa điểm thông minh cho Hà
 - **AI Service (GPT/Claude)** - Natural language generation
 - **Embedding Service** - Text embeddings
 
+## 🎉 **NEW: Phase 1 Features!**
+
+✨ **Vừa triển khai:**
+- 🌍 **Multilingual Support** - Vietnamese & English
+- 🗺️ **Maps & Navigation** - Google Maps integration, directions
+- ⏰ **Opening Hours** - Real-time status & scheduling
+- 💰 **Budget Estimation** - Cost calculation & filtering
+
+👉 Xem chi tiết: [PHASE1_IMPLEMENTATION.md](PHASE1_IMPLEMENTATION.md)
+
 ## ✨ Tính năng chính
 
 ### 🎯 9 Services đã triển khai:
 
-0. **🤖 Agent Chat** - Chat tự nhiên, tự động routing (NEW!)
-1. **📍 Thông tin địa điểm** - Lấy chi tiết về địa điểm
-2. **🔍 Tìm kiếm theo category** - Tìm restaurant/cafe/hotel theo vị trí
+0. **🤖 Agent Chat** - Chat tự nhiên, tự động routing **(Enhanced with multilingual!)**
+1. **📍 Thông tin địa điểm** - Lấy chi tiết về địa điểm **(+ English support)**
+2. **🔍 Tìm kiếm theo category** - Tìm restaurant/cafe/hotel **(+ Maps, prices)**
 3. **🏛️ Tìm kiếm gần landmark** - Tìm địa điểm xung quanh điểm nổi tiếng
 4. **🧠 Semantic search** - Tìm kiếm bằng ngôn ngữ tự nhiên
-5. **⚖️ So sánh địa điểm** - So sánh chi tiết nhiều địa điểm
-6. **📅 Lập lịch trình** - Planning itinerary thông minh
+5. **⚖️ So sánh địa điểm** - So sánh chi tiết nhiều địa điểm **(+ Price comparison)**
+6. **📅 Lập lịch trình** - Planning itinerary thông minh **(+ Budget, routing)**
 7. **💡 Gợi ý cá nhân hóa** - Recommendation dựa trên preferences
 8. **❤️ Health check** - Kiểm tra trạng thái server
 
